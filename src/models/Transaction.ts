@@ -10,6 +10,8 @@ import {
 
 import Category from './Category';
 
+import ColumnNumericTransformer from '../transformers/ColumnNumericTransformer';
+
 @Entity('transactions')
 class Transaction {
   @PrimaryGeneratedColumn('uuid')
@@ -21,7 +23,11 @@ class Transaction {
   @Column()
   type: 'income' | 'outcome';
 
-  @Column()
+  @Column('decimal', {
+    precision: 15,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   value: number;
 
   @Column()
