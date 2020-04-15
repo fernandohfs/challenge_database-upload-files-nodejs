@@ -1,7 +1,9 @@
-import { getRepository } from 'typeorm';
+import { getRepository, getCustomRepository } from 'typeorm';
 
 import Transaction from '../models/Transaction';
 import Category from '../models/Category';
+import TransactionsRepository from '../repositories/TransactionsRepository';
+import AppError from '../errors/AppError';
 
 interface RequestDTO {
   title: string;
@@ -18,7 +20,7 @@ class CreateTransactionService {
     category,
   }: RequestDTO): Promise<Transaction> {
     const categoriesRepository = getRepository(Category);
-    const transactionsRepository = getRepository(Transaction);
+    const transactionsRepository = getCustomRepository(TransactionsRepository);
 
     /**
      * 1ª Regra de negócio -> Verificar se a categoria já está cadastrada no banco de dados
@@ -43,7 +45,17 @@ class CreateTransactionService {
     }
 
     /**
-     * 2ª Regra de negócio -> cadastrar uma nova transação com o categoryId tratado acima
+     * 2ª Regra de negócio -> validar se o valor de saída é maior do que o valor total de saldo
+     */
+
+    const { total } = await transactionsRepository.getBalance();
+
+    if (type && type === 'outcome' && value > total) {
+      throw new AppError("You don't have enough balance for this transaction.");
+    }
+
+    /**
+     * Tudo certo, podemos cadastrar uma nova transação
      */
 
     const transaction = transactionsRepository.create({
